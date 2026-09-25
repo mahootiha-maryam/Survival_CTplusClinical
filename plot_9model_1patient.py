@@ -1486,7 +1486,7 @@ class survnet_2_8(torch.nn.Module):
         super(survnet_2_8, self).__init__()
 
         self.fc1 = torch.nn.Linear(in_features, 1000)
-        self.fc2 = torch.nn.Linear(1000+18, 500)
+        self.fc2 = torch.nn.Linear(1000+17, 500)
         self.fc3 = torch.nn.Linear(500, 100)
         self.fc4 = torch.nn.Linear(100, out_features)
         
@@ -1500,7 +1500,7 @@ class survnet_2_8(torch.nn.Module):
     
     def forward(self, imfeat_train, col1_train, col2_train, col3_train, 
                 col4_train, col5_train, col6_train, col7_train, col8_train,
-                col9_train, col10_train, col11_train, col12_train, col13_train,
+                col10_train, col11_train, col12_train, col13_train,
                 col14_train, col15_train, col16_train, col17_train, col18_train):
         
         x1 = self.fc1(imfeat_train)
@@ -1513,7 +1513,7 @@ class survnet_2_8(torch.nn.Module):
         
         merged_data = torch.cat((x4, col1_train, col2_train, col3_train, col4_train,
                                  col5_train, col6_train, col7_train, col8_train,
-                                 col9_train, col10_train, col11_train, col12_train,
+                                 col10_train, col11_train, col12_train,
                                  col13_train,col14_train, col15_train, col16_train, 
                                  col17_train, col18_train), dim=1)
         
@@ -1538,6 +1538,11 @@ class survnet_2_8(torch.nn.Module):
         return x13
 
 label_d = pd.read_csv ('csv_files/kits_label_244_importance0.01.csv')
+if 'cl9d' in label_d.columns:
+    raise ValueError(
+        'Legacy Experiment 8 data detected: regenerate the CSV with the '
+        'corrected 17-feature pipeline before plotting.'
+    )
 
 df_train_target = label_d.loc[train_val_index_fold2]
 df_test_target = label_d.loc[test_index_fold2]
@@ -1550,7 +1555,7 @@ in_features = imfeat_train.shape[1]
 out_features = labtrans.out_features
 net = survnet_2_8(in_features, out_features)
 model = LogisticHazard(net, tt.optim.Adam(0.01), duration_index=labtrans.cuts)
-model.load_model_weights('models/merged_IF0.01_84CI.pt')
+model.load_model_weights('models/merged_IF0.01_corrected.pt')
 
 n_get_target = lambda label_d: (label_d['case_id'], label_d['survival'].values.astype(int), label_d['event'].values.astype(int))
 caseid_test, durations_test, events_test = n_get_target(df_test_target)
@@ -1567,7 +1572,6 @@ col5_train = (df_train_target['cl5d'].astype('float32')).to_numpy()
 col6_train = (df_train_target['cl6d'].astype('float32')).to_numpy()
 col7_train = (df_train_target['cl7d'].astype('float32')).to_numpy()
 col8_train = (df_train_target['cl8d'].astype('float32')).to_numpy()
-col9_train = (df_train_target['cl9d'].astype('float32')).to_numpy()
 col10_train = (df_train_target['cl10d'].astype('float32')).to_numpy()
 col11_train = (df_train_target['cl11d'].astype('float32')).to_numpy()
 col12_train = (df_train_target['cl12d'].astype('float32')).to_numpy()
@@ -1587,7 +1591,6 @@ col5_test = (df_test_target['cl5d'].astype('float32')).to_numpy()
 col6_test = (df_test_target['cl6d'].astype('float32')).to_numpy()
 col7_test = (df_test_target['cl7d'].astype('float32')).to_numpy()
 col8_test = (df_test_target['cl8d'].astype('float32')).to_numpy()
-col9_test = (df_test_target['cl9d'].astype('float32')).to_numpy()
 col10_test = (df_test_target['cl10d'].astype('float32')).to_numpy()
 col11_test = (df_test_target['cl11d'].astype('float32')).to_numpy()
 col12_test = (df_test_target['cl12d'].astype('float32')).to_numpy()
@@ -1606,7 +1609,6 @@ col5_train = col5_train.reshape(len(col5_train),1)
 col6_train = col6_train.reshape(len(col6_train),1)
 col7_train = col7_train.reshape(len(col7_train),1)
 col8_train = col8_train.reshape(len(col8_train),1)
-col9_train = col9_train.reshape(len(col9_train),1)
 col10_train = col10_train.reshape(len(col10_train),1)
 col11_train = col11_train.reshape(len(col11_train),1)
 col12_train = col12_train.reshape(len(col12_train),1)
@@ -1625,7 +1627,6 @@ col5_test = col5_test.reshape(len(col5_test),1)
 col6_test = col6_test.reshape(len(col6_test),1)
 col7_test = col7_test.reshape(len(col7_test),1)
 col8_test = col8_test.reshape(len(col8_test),1)
-col9_test = col9_test.reshape(len(col9_test),1)
 col10_test = col10_test.reshape(len(col10_test),1)
 col11_test = col11_test.reshape(len(col11_test),1)
 col12_test = col12_test.reshape(len(col12_test),1)
@@ -1638,11 +1639,11 @@ col18_test = col18_test.reshape(len(col18_test),1)
 
 x_train = (imfeat_train, col1_train, col2_train, col3_train, col4_train,
            col5_train, col6_train, col7_train, col8_train,
-           col9_train, col10_train, col11_train, col12_train, col13_train,
+           col10_train, col11_train, col12_train, col13_train,
            col14_train, col15_train, col16_train, col17_train, col18_train)
 x_test = (imfeat_test, col1_test, col2_test, col3_test, col4_test,
           col5_test, col6_test, col7_test, col8_test,
-          col9_test, col10_test, col11_test, col12_test, col13_test,
+          col10_test, col11_test, col12_test, col13_test,
           col14_test, col15_test, col16_test, col17_test, col18_test)
 
 surv_train_disc = model.predict_surv_df(x_train)
@@ -1766,7 +1767,7 @@ class survnet_2_9(torch.nn.Module):
         super(survnet_2_9, self).__init__()
 
         self.fc1 = torch.nn.Linear(in_features, 1000)
-        self.fc2 = torch.nn.Linear(1000+30, 500)
+        self.fc2 = torch.nn.Linear(1000+29, 500)
         self.fc3 = torch.nn.Linear(500, 100)
         self.fc4 = torch.nn.Linear(100, out_features)
         
@@ -1780,7 +1781,7 @@ class survnet_2_9(torch.nn.Module):
     
     def forward(self, imfeat_train, col1_train, col2_train, col3_train, 
                 col4_train, col5_train, col6_train, col7_train, col8_train,
-                col9_train, col10_train, col11_train, col12_train, col13_train,
+                col10_train, col11_train, col12_train, col13_train,
                 col14_train, col15_train, col16_train, col17_train, col18_train,
                 col19_train, col20_train, col21_train, col22_train, col23_train,
                 col24_train, col25_train, col26_train, col27_train, col28_train,
@@ -1796,7 +1797,7 @@ class survnet_2_9(torch.nn.Module):
         
         merged_data = torch.cat((x4, col1_train, col2_train, col3_train, col4_train,
                                  col5_train, col6_train, col7_train, col8_train,
-                                 col9_train, col10_train, col11_train, col12_train,
+                                 col10_train, col11_train, col12_train,
                                  col13_train,col14_train, col15_train, col16_train, 
                                  col17_train, col18_train, col19_train, col20_train, col21_train, col22_train, col23_train,
                                  col24_train, col25_train, col26_train, col27_train, col28_train,
@@ -1823,6 +1824,11 @@ class survnet_2_9(torch.nn.Module):
         return x13
     
 label_d = pd.read_csv ('csv_files/kits_label_244_importance0.001.csv')
+if 'cl9d' in label_d.columns:
+    raise ValueError(
+        'Legacy Experiment 9 data detected: regenerate the CSV with the '
+        'corrected 29-feature pipeline before plotting.'
+    )
 
 df_train_target = label_d.loc[train_val_index_fold2]
 df_test_target = label_d.loc[test_index_fold2]
@@ -1835,7 +1841,7 @@ in_features = imfeat_train.shape[1]
 out_features = labtrans.out_features
 net = survnet_2_9(in_features, out_features)
 model = LogisticHazard(net, tt.optim.Adam(0.01), duration_index=labtrans.cuts)
-model.load_model_weights('models/merged_IF0.001_85CI.pt')
+model.load_model_weights('models/merged_IF0.001_corrected.pt')
 
 n_get_target = lambda label_d: (label_d['case_id'], label_d['survival'].values.astype(int), label_d['event'].values.astype(int))
 caseid_test, durations_test, events_test = n_get_target(df_test_target)
@@ -1856,7 +1862,6 @@ col5_train = (df_train_target['cl5d'].astype('float32')).to_numpy()
 col6_train = (df_train_target['cl6d'].astype('float32')).to_numpy()
 col7_train = (df_train_target['cl7d'].astype('float32')).to_numpy()
 col8_train = (df_train_target['cl8d'].astype('float32')).to_numpy()
-col9_train = (df_train_target['cl9d'].astype('float32')).to_numpy()
 col10_train = (df_train_target['cl10d'].astype('float32')).to_numpy()
 col11_train = (df_train_target['cl11d'].astype('float32')).to_numpy()
 col12_train = (df_train_target['cl12d'].astype('float32')).to_numpy()
@@ -1889,7 +1894,6 @@ col5_test = (df_test_target['cl5d'].astype('float32')).to_numpy()
 col6_test = (df_test_target['cl6d'].astype('float32')).to_numpy()
 col7_test = (df_test_target['cl7d'].astype('float32')).to_numpy()
 col8_test = (df_test_target['cl8d'].astype('float32')).to_numpy()
-col9_test = (df_test_target['cl9d'].astype('float32')).to_numpy()
 col10_test = (df_test_target['cl10d'].astype('float32')).to_numpy()
 col11_test = (df_test_target['cl11d'].astype('float32')).to_numpy()
 col12_test = (df_test_target['cl12d'].astype('float32')).to_numpy()
@@ -1922,7 +1926,6 @@ col5_train = col5_train.reshape(len(col5_train),1)
 col6_train = col6_train.reshape(len(col6_train),1)
 col7_train = col7_train.reshape(len(col7_train),1)
 col8_train = col8_train.reshape(len(col8_train),1)
-col9_train = col9_train.reshape(len(col9_train),1)
 col10_train = col10_train.reshape(len(col10_train),1)
 col11_train = col11_train.reshape(len(col11_train),1)
 col12_train = col12_train.reshape(len(col12_train),1)
@@ -1953,7 +1956,6 @@ col5_test = col5_test.reshape(len(col5_test),1)
 col6_test = col6_test.reshape(len(col6_test),1)
 col7_test = col7_test.reshape(len(col7_test),1)
 col8_test = col8_test.reshape(len(col8_test),1)
-col9_test = col9_test.reshape(len(col9_test),1)
 col10_test = col10_test.reshape(len(col10_test),1)
 col11_test = col11_test.reshape(len(col11_test),1)
 col12_test = col12_test.reshape(len(col12_test),1)
@@ -1978,14 +1980,14 @@ col30_test = col30_test.reshape(len(col30_test),1)
 
 x_train = (imfeat_train, col1_train, col2_train, col3_train, col4_train,
            col5_train, col6_train, col7_train, col8_train,
-           col9_train, col10_train, col11_train, col12_train, col13_train,
+           col10_train, col11_train, col12_train, col13_train,
            col14_train, col15_train, col16_train, col17_train, col18_train,
            col19_train, col20_train, col21_train, col22_train, col23_train,
            col24_train, col25_train, col26_train, col27_train, col28_train,
            col29_train, col30_train)
 x_test = (imfeat_test, col1_test, col2_test, col3_test, col4_test,
           col5_test, col6_test, col7_test, col8_test,
-          col9_test, col10_test, col11_test, col12_test, col13_test,
+          col10_test, col11_test, col12_test, col13_test,
           col14_test, col15_test, col16_test, col17_test, col18_test,
           col19_test, col20_test, col21_test, col22_test, col23_test,
           col24_test, col25_test, col26_test, col27_test, col28_test,

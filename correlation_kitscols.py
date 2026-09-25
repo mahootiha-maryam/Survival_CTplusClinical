@@ -466,7 +466,13 @@ cor_survival = correlation_matrix['vital_days_after_surgery']
 from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 
-X = df_kitsnumberv.drop('vital_days_after_surgery', axis=1)
+# Survival duration and event status jointly define the outcome. Neither may
+# participate in clinical feature selection. Remove CSV index artifacts too.
+X = df_kitsnumberv.drop(
+    columns=['vital_days_after_surgery', 'event'],
+    errors='raise'
+)
+X = X.loc[:, ~X.columns.str.startswith('Unnamed:')]
 y = df_kitsnumberv['vital_days_after_surgery']
 
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)

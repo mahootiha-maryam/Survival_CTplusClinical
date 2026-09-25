@@ -213,7 +213,8 @@ cl5 = Survival_df['hospitalization'].tolist()
 cl6 = Survival_df['smoking_history'].tolist()
 cl7 = Survival_df['surgery_type'].tolist()
 cl8 = Survival_df['gender'].tolist()
-cl9 = Survival_df['event'].tolist()
+# The event indicator is part of the survival target and must never be used
+# as a clinical input feature.
 cl10 = Survival_df['tumor_histologic_subtype'].tolist()
 cl11 = Survival_df['pathology_t_stage'].tolist()
 cl12 = Survival_df['comorbidities/localized_solid_tumor'].tolist()
@@ -262,7 +263,6 @@ cl5d = np.array([cl5[i] for i in case_numbers])
 cl6d = np.array([cl6[i] for i in case_numbers])
 cl7d = np.array([cl7[i] for i in case_numbers])
 cl8d = np.array([cl8[i] for i in case_numbers])
-cl9d = np.array([cl9[i] for i in case_numbers])
 cl10d = np.array([cl10[i] for i in case_numbers])
 cl11d = np.array([cl11[i] for i in case_numbers])
 cl12d = np.array([cl12[i] for i in case_numbers])
@@ -273,10 +273,22 @@ cl16d = np.array([cl16[i] for i in case_numbers])
 cl17d = np.array([cl17[i] for i in case_numbers])
 cl18d = np.array([cl18[i] for i in case_numbers])
 
-dataf = list(zip(raw_tar_case, raw_tar_st, raw_tar_ev, cl1d, cl2d, cl3d, cl4d, cl5d, cl6d, cl7d, cl8d, cl9d, cl10d, cl11d, cl12d, cl13d, cl4d, cl5d, cl6d, cl7d, cl8d))
-pp = pd.DataFrame(data = dataf, columns = ['case_id','survival','event', 'cl1d', 'cl2d', 'cl3d', 'cl4d', 'cl5d', 'cl6d', 'cl7d', 'cl8d', 'cl9d', 'cl10d', 'cl11d', 'cl12d', 'cl13d',
-                                           'cl14d', 'cl15d', 'cl16d',
-                                           'cl17d', 'cl18d'])
+clinical_feature_columns = [
+    'cl1d', 'cl2d', 'cl3d', 'cl4d', 'cl5d', 'cl6d', 'cl7d', 'cl8d',
+    'cl10d', 'cl11d', 'cl12d', 'cl13d', 'cl14d', 'cl15d', 'cl16d',
+    'cl17d', 'cl18d'
+]
+dataf = list(zip(
+    raw_tar_case, raw_tar_st, raw_tar_ev,
+    cl1d, cl2d, cl3d, cl4d, cl5d, cl6d, cl7d, cl8d,
+    cl10d, cl11d, cl12d, cl13d, cl14d, cl15d, cl16d, cl17d, cl18d
+))
+pp = pd.DataFrame(
+    data=dataf,
+    columns=['case_id', 'survival', 'event'] + clinical_feature_columns
+)
+assert len(clinical_feature_columns) == 17
+assert 'cl9d' not in clinical_feature_columns
 pp.to_csv('kits_label_244_importance0.01.csv',index=False)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -356,7 +368,6 @@ col5_train = (df_train_target['cl5d'].astype('float32')).to_numpy()
 col6_train = (df_train_target['cl6d'].astype('float32')).to_numpy()
 col7_train = (df_train_target['cl7d'].astype('float32')).to_numpy()
 col8_train = (df_train_target['cl8d'].astype('float32')).to_numpy()
-col9_train = (df_train_target['cl9d'].astype('float32')).to_numpy()
 col10_train = (df_train_target['cl10d'].astype('float32')).to_numpy()
 col11_train = (df_train_target['cl11d'].astype('float32')).to_numpy()
 col12_train = (df_train_target['cl12d'].astype('float32')).to_numpy()
@@ -376,7 +387,6 @@ col5_test = (df_test_target['cl5d'].astype('float32')).to_numpy()
 col6_test = (df_test_target['cl6d'].astype('float32')).to_numpy()
 col7_test = (df_test_target['cl7d'].astype('float32')).to_numpy()
 col8_test = (df_test_target['cl8d'].astype('float32')).to_numpy()
-col9_test = (df_test_target['cl9d'].astype('float32')).to_numpy()
 col10_test = (df_test_target['cl10d'].astype('float32')).to_numpy()
 col11_test = (df_test_target['cl11d'].astype('float32')).to_numpy()
 col12_test = (df_test_target['cl12d'].astype('float32')).to_numpy()
@@ -397,7 +407,6 @@ col5_train = col5_train.reshape(len(col5_train),1)
 col6_train = col6_train.reshape(len(col6_train),1)
 col7_train = col7_train.reshape(len(col7_train),1)
 col8_train = col8_train.reshape(len(col8_train),1)
-col9_train = col9_train.reshape(len(col9_train),1)
 col10_train = col10_train.reshape(len(col10_train),1)
 col11_train = col11_train.reshape(len(col11_train),1)
 col12_train = col12_train.reshape(len(col12_train),1)
@@ -416,7 +425,6 @@ col5_test = col5_test.reshape(len(col5_test),1)
 col6_test = col6_test.reshape(len(col6_test),1)
 col7_test = col7_test.reshape(len(col7_test),1)
 col8_test = col8_test.reshape(len(col8_test),1)
-col9_test = col9_test.reshape(len(col9_test),1)
 col10_test = col10_test.reshape(len(col10_test),1)
 col11_test = col11_test.reshape(len(col11_test),1)
 col12_test = col12_test.reshape(len(col12_test),1)
@@ -444,13 +452,13 @@ target_train = labtrans.fit_transform(*get_target(df_train_target))
 target_test = labtrans.transform(*get_target(df_test_target))
 
 train = tt.tuplefy((imfeat_train, col1_train, col2_train, col3_train, col4_train, col5_train,
-                    col6_train, col7_train, col8_train, col9_train, 
+                    col6_train, col7_train, col8_train,
                     col10_train, col11_train, col12_train, col13_train,
                     col14_train, col15_train, col16_train, col17_train,
                     col18_train), target_train)
 test = tt.tuplefy((imfeat_test, col1_test, col2_test, col3_test, col4_test,
                    col5_test, col6_test, col7_test, col8_test,
-                   col9_test, col10_test, col11_test, col12_test, col13_test,
+                   col10_test, col11_test, col12_test, col13_test,
                    col14_test, col15_test, col16_test, col17_test, col18_test), target_test)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -506,7 +514,7 @@ class survnet_2(torch.nn.Module):
         super(survnet_2, self).__init__()
 
         self.fc1 = torch.nn.Linear(in_features, 1000)
-        self.fc2 = torch.nn.Linear(1000+18, 500)
+        self.fc2 = torch.nn.Linear(1000+17, 500)
         self.fc3 = torch.nn.Linear(500, 100)
         self.fc4 = torch.nn.Linear(100, out_features)
         
@@ -520,7 +528,7 @@ class survnet_2(torch.nn.Module):
     
     def forward(self, imfeat_train, col1_train, col2_train, col3_train, 
                 col4_train, col5_train, col6_train, col7_train, col8_train,
-                col9_train, col10_train, col11_train, col12_train, col13_train,
+                col10_train, col11_train, col12_train, col13_train,
                 col14_train, col15_train, col16_train, col17_train, col18_train):
         
         x1 = self.fc1(imfeat_train)
@@ -533,7 +541,7 @@ class survnet_2(torch.nn.Module):
         
         merged_data = torch.cat((x4, col1_train, col2_train, col3_train, col4_train,
                                  col5_train, col6_train, col7_train, col8_train,
-                                 col9_train, col10_train, col11_train, col12_train,
+                                 col10_train, col11_train, col12_train,
                                  col13_train,col14_train, col15_train, col16_train, 
                                  col17_train, col18_train), dim=1)
         
@@ -582,13 +590,15 @@ model = LogisticHazard(net, tt.optim.Adam(0.01), duration_index=labtrans.cuts)
 # In[911]:
 
 
-# model.save_model_weights('merged_spearman0.1_79CIuuuu.pt')
+# model.save_model_weights('merged_IF0.01_corrected.pt')
 
 
 # In[918]:
 
 
-model.load_model_weights('merged_IF0.01_84CI.pt')
+# The legacy 18-input checkpoint is incompatible with this corrected model.
+# Retrain the model and save its weights under this new filename before evaluation.
+model.load_model_weights('merged_IF0.01_corrected.pt')
 
 
 # In[919]:
@@ -596,11 +606,11 @@ model.load_model_weights('merged_IF0.01_84CI.pt')
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 x_train = (imfeat_train, col1_train, col2_train, col3_train, col4_train,
            col5_train, col6_train, col7_train, col8_train,
-           col9_train, col10_train, col11_train, col12_train, col13_train,
+           col10_train, col11_train, col12_train, col13_train,
            col14_train, col15_train, col16_train, col17_train, col18_train)
 x_test = (imfeat_test, col1_test, col2_test, col3_test, col4_test,
           col5_test, col6_test, col7_test, col8_test,
-          col9_test, col10_test, col11_test, col12_test, col13_test,
+          col10_test, col11_test, col12_test, col13_test,
           col14_test, col15_test, col16_test, col17_test, col18_test)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 surv_train_disc = model.predict_surv_df(x_train)
@@ -744,8 +754,6 @@ _ = plt.xlabel('Time')
 # surv_test_cont.iloc[:, alive_person_test[0][:]].plot(drawstyle='steps-post')
 # plt.ylabel('S(t | x)')
 # _ = plt.xlabel('Time')
-
-
 
 
 
